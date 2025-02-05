@@ -1,0 +1,1025 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Finance Manager</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.7.2/font/bootstrap-icons.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root {
+            --nav-bg: #2c3e50;
+            --nav-hover: #34495e;
+        }
+        .navbar {
+            background-color: var(--nav-bg);
+            padding: 1rem;
+        }
+        .navbar-brand {
+            color: white !important;
+            font-weight: bold;
+            font-size: 1.5rem;
+        }
+        .nav-link {
+            color: rgba(255,255,255,0.8) !important;
+            transition: all 0.3s ease;
+        }
+        .nav-link:hover {
+            color: white !important;
+            background-color: var(--nav-hover);
+            border-radius: 5px;
+        }
+        .nav-link.active {
+            color: white !important;
+            background-color: var(--nav-hover);
+            border-radius: 5px;
+        }
+        .content-section {
+            display: none;
+            padding: 20px 0;
+        }
+        .content-section.active {
+            display: block;
+        }
+        .transaction-form {
+            max-width: 500px;
+            margin: 20px auto;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+        .transactions-list {
+            max-width: 900px;
+            margin: 20px auto;
+        }
+        .category-badge {
+            padding: 5px 10px;
+            border-radius: 15px;
+            font-size: 0.9em;
+        }
+        .category-Essential { background-color: #d4edda; color: #155724; }
+        .category-Luxury { background-color: #f8d7da; color: #721c24; }
+        .category-Salary { background-color: #cce5ff; color: #004085; }
+        .category-Services { background-color: #fff3cd; color: #856404; }
+        .category-Investments { background-color: #e2e3e5; color: #383d41; }
+        .alert {
+            display: none;
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 1000;
+            animation: fadeIn 0.5s;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .chart-container {
+            margin: 20px 0;
+            padding: 20px;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+        .total-summary {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+        .filters {
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(255, 255, 255, 0.8);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+        }
+        
+        .loading-spinner {
+            width: 50px;
+            height: 50px;
+            border: 5px solid #f3f3f3;
+            border-top: 5px solid #3498db;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .toast-container {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 9999;
+        }
+        
+        .fade-enter {
+            opacity: 0;
+            transform: translateY(-20px);
+        }
+        
+        .fade-enter-active {
+            opacity: 1;
+            transform: translateY(0);
+            transition: opacity 300ms, transform 300ms;
+        }
+        
+        .fade-exit {
+            opacity: 1;
+            transform: translateY(0);
+        }
+        
+        .fade-exit-active {
+            opacity: 0;
+            transform: translateY(-20px);
+            transition: opacity 300ms, transform 300ms;
+        }
+    </style>
+</head>
+<body class="bg-light">
+    <!-- Navigation Bar -->
+    <nav class="navbar navbar-expand-lg navbar-dark">
+        <div class="container">
+            <a class="navbar-brand" href="#" data-section="dashboard">
+                <i class="bi bi-wallet2"></i> Finance Manager
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav me-auto">
+                    <li class="nav-item">
+                        <a class="nav-link active" href="#" data-section="dashboard">
+                            <i class="bi bi-house"></i> Home
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#" data-section="income-calculator">
+                            <i class="bi bi-calculator"></i> Income Calculator
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#" data-section="transactions">
+                            <i class="bi bi-cash-stack"></i> Transactions
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#" data-section="analytics">
+                            <i class="bi bi-graph-up"></i> Analytics
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#" data-section="export">
+                            <i class="bi bi-download"></i> Export
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Alert for feedback -->
+    <div class="alert alert-success" role="alert" id="feedbackAlert">
+        <i class="bi bi-check-circle-fill"></i>
+        <span id="alertMessage"></span>
+    </div>
+
+    <div class="loading-overlay" id="loadingOverlay">
+        <div class="loading-spinner"></div>
+    </div>
+    
+    <div class="toast-container"></div>
+    
+    <div class="container mt-4">
+        <!-- Dashboard Section -->
+        <div id="dashboard" class="content-section active">
+            <h2 class="mb-4">Financial Dashboard</h2>
+            <div class="total-summary">
+                <div class="row">
+                    <div class="col-md-3">
+                        <h5>Total Income</h5>
+                        <p class="h4 text-success" id="totalIncome">€0.00</p>
+                    </div>
+                    <div class="col-md-3">
+                        <h5>Total Expenses</h5>
+                        <p class="h4 text-danger" id="totalExpenses">€0.00</p>
+                    </div>
+                    <div class="col-md-3">
+                        <h5>Balance</h5>
+                        <p class="h4" id="balance">€0.00</p>
+                    </div>
+                    <div class="col-md-3">
+                        <h5>Total Tax</h5>
+                        <p class="h4 text-info" id="totalTax">€0.00</p>
+                    </div>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="chart-container">
+                        <h4>Spending by Category</h4>
+                        <canvas id="categoryChart"></canvas>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="chart-container">
+                        <h4>Monthly Trends</h4>
+                        <canvas id="trendChart"></canvas>
+                    </div>
+                </div>
+            </div>
+            <div class="row mt-4">
+                <div class="col-12">
+                    <div class="card">
+                        <div class="card-header d-flex justify-content-between align-items-center">
+                            <h5 class="card-title mb-0">AI Budget Insights</h5>
+                            <div>
+                                <select id="insightsPeriod" class="form-select form-select-sm">
+                                    <option value="30">Last 30 Days</option>
+                                    <option value="60">Last 60 Days</option>
+                                    <option value="90">Last 90 Days</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            <div id="budgetInsights">
+                                <div class="text-center" id="insightsLoader" style="display: none;">
+                                    <div class="spinner-border text-primary" role="status">
+                                        <span class="visually-hidden">Loading...</span>
+                                    </div>
+                                </div>
+                                <div id="insightsContent"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="row mt-4">
+                <div class="col-12">
+                    <div class="card">
+                        <div class="card-header d-flex justify-content-between align-items-center">
+                            <h5 class="card-title mb-0">Expense Forecasts</h5>
+                            <div>
+                                <select id="forecastPeriod" class="form-select form-select-sm">
+                                    <option value="30">Next 30 Days</option>
+                                    <option value="60">Next 60 Days</option>
+                                    <option value="90">Next 90 Days</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            <div id="forecastCharts"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="row mt-4">
+                <div class="col-12">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="card-title mb-0">Smart Investment & Savings Recommendations</h5>
+                        </div>
+                        <div class="card-body">
+                            <div id="recommendationsLoader" class="text-center" style="display: none;">
+                                <div class="spinner-border text-primary" role="status">
+                                    <span class="visually-hidden">Loading...</span>
+                                </div>
+                            </div>
+                            <div id="recommendationsContent">
+                                <div class="row">
+                                    <div class="col-md-4">
+                                        <div class="card h-100">
+                                            <div class="card-body">
+                                                <h6 class="card-title">Risk Profile</h6>
+                                                <div id="riskProfile"></div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <div class="card h-100">
+                                            <div class="card-body">
+                                                <h6 class="card-title">Investment Allocation</h6>
+                                                <canvas id="investmentAllocationChart"></canvas>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <div class="card h-100">
+                                            <div class="card-body">
+                                                <h6 class="card-title">Savings Strategy</h6>
+                                                <div id="savingsStrategy"></div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="row mt-4">
+                                    <div class="col-12">
+                                        <div class="alert alert-info" id="allocationRecommendation"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="row mt-4">
+                <div class="col-12">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="card-title mb-0">Smart Budget Adjustments</h5>
+                        </div>
+                        <div class="card-body">
+                            <div id="budgetAdjustmentsLoader" class="text-center" style="display: none;">
+                                <div class="spinner-border text-primary" role="status">
+                                    <span class="visually-hidden">Loading...</span>
+                                </div>
+                            </div>
+                            <div id="budgetAdjustmentsContent">
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="card h-100">
+                                            <div class="card-body">
+                                                <h6 class="card-title">Market Metrics</h6>
+                                                <div id="marketMetrics"></div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="card h-100">
+                                            <div class="card-body">
+                                                <h6 class="card-title">Budget Changes</h6>
+                                                <canvas id="budgetChangesChart"></canvas>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="row mt-4">
+                                    <div class="col-12">
+                                        <div class="alert alert-info" id="adjustmentSummary"></div>
+                                        <div class="text-end">
+                                            <button class="btn btn-primary" onclick="applyBudgetAdjustments()">Apply Adjustments</button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="row mt-4">
+                <div class="col-12">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="card-title mb-0">Personalized Financial Insights</h5>
+                        </div>
+                        <div class="card-body">
+                            <div id="insightsLoader" class="text-center" style="display: none;">
+                                <div class="spinner-border text-primary" role="status">
+                                    <span class="visually-hidden">Loading...</span>
+                                </div>
+                            </div>
+                            <div id="insightsContent">
+                                <div class="row">
+                                    <div class="col-md-4">
+                                        <div class="card h-100">
+                                            <div class="card-body">
+                                                <h6 class="card-title">Summary Metrics</h6>
+                                                <div id="summaryMetrics"></div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-8">
+                                        <div class="card h-100">
+                                            <div class="card-body">
+                                                <h6 class="card-title">Monthly Analysis</h6>
+                                                <div id="monthlyAnalysis" class="mb-3"></div>
+                                                <h6 class="card-title">Action Items</h6>
+                                                <div id="actionItems"></div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="row mt-4">
+                <div class="col-12">
+                    <div class="card">
+                        <div class="card-header d-flex justify-content-between align-items-center">
+                            <h5 class="card-title mb-0">Smart Alerts</h5>
+                            <div>
+                                <span class="badge bg-danger" id="unreadAlertsBadge" style="display: none;">0</span>
+                                <button class="btn btn-sm btn-primary ms-2" onclick="runAnomalyDetection()">
+                                    Run Detection
+                                </button>
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            <div id="alertsLoader" class="text-center" style="display: none;">
+                                <div class="spinner-border text-primary" role="status">
+                                    <span class="visually-hidden">Loading...</span>
+                                </div>
+                            </div>
+                            <div id="alertsContent">
+                                <div class="list-group" id="alertsList">
+                                    <!-- Alerts will be populated here -->
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="row mt-4">
+                <div class="col-12">
+                    <div class="card">
+                        <div class="card-header d-flex justify-content-between align-items-center">
+                            <h5 class="card-title mb-0">Bill Management</h5>
+                            <div>
+                                <button class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#addBillModal">
+                                    Add Bill
+                                </button>
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            <ul class="nav nav-tabs" id="billTabs" role="tablist">
+                                <li class="nav-item" role="presentation">
+                                    <button class="nav-link active" id="upcoming-tab" data-bs-toggle="tab" data-bs-target="#upcoming" type="button" role="tab">
+                                        Upcoming Bills
+                                    </button>
+                                </li>
+                                <li class="nav-item" role="presentation">
+                                    <button class="nav-link" id="reminders-tab" data-bs-toggle="tab" data-bs-target="#reminders" type="button" role="tab">
+                                        Reminders
+                                        <span class="badge bg-danger ms-2" id="remindersBadge" style="display: none;">0</span>
+                                    </button>
+                                </li>
+                            </ul>
+                            
+                            <div class="tab-content mt-3" id="billTabsContent">
+                                <div class="tab-pane fade show active" id="upcoming" role="tabpanel">
+                                    <div id="upcomingBillsLoader" class="text-center" style="display: none;">
+                                        <div class="spinner-border text-primary" role="status">
+                                            <span class="visually-hidden">Loading...</span>
+                                        </div>
+                                    </div>
+                                    <div id="upcomingBillsList"></div>
+                                </div>
+                                
+                                <div class="tab-pane fade" id="reminders" role="tabpanel">
+                                    <div id="remindersLoader" class="text-center" style="display: none;">
+                                        <div class="spinner-border text-primary" role="status">
+                                            <span class="visually-hidden">Loading...</span>
+                                        </div>
+                                    </div>
+                                    <div id="remindersList"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Income Calculator Section -->
+        <div id="income-calculator" class="content-section">
+            <h2 class="mb-4">Income Calculator</h2>
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="chart-container">
+                        <h4>Calculate Your Budget</h4>
+                        <form id="incomeCalculatorForm">
+                            <div class="mb-3">
+                                <label class="form-label">Gross Monthly Income (€)</label>
+                                <div class="input-group">
+                                    <span class="input-group-text">€</span>
+                                    <input type="number" class="form-control" id="grossIncome" required min="0" step="0.01">
+                                </div>
+                            </div>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-calculator"></i> Calculate
+                            </button>
+                        </form>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="chart-container">
+                        <h4>Results</h4>
+                        <div id="calculationResults">
+                            <!-- Results will be displayed here -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="row mt-4">
+                <div class="col-12">
+                    <div class="chart-container">
+                        <h4>Budget Breakdown</h4>
+                        <canvas id="budgetBreakdownChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Transactions Section -->
+        <div id="transactions" class="content-section">
+            <h2 class="mb-4">Manage Transactions</h2>
+            <div class="transaction-form bg-white">
+                <h4>Add New Transaction</h4>
+                <form id="transactionForm">
+                    <div class="mb-3">
+                        <label for="description" class="form-label">Description</label>
+                        <input type="text" class="form-control" id="description" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="amount" class="form-label">Amount (€)</label>
+                        <div class="input-group">
+                            <span class="input-group-text">€</span>
+                            <input type="number" step="0.01" class="form-control" id="amount" required>
+                        </div>
+                    </div>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bi bi-plus-circle"></i> Add Transaction
+                    </button>
+                </form>
+            </div>
+            <div class="filters">
+                <h4>Filters</h4>
+                <div class="row">
+                    <div class="col-md-3">
+                        <label class="form-label">Category</label>
+                        <select class="form-select" id="categoryFilter">
+                            <option value="">All Categories</option>
+                            <option value="Essential">Essential</option>
+                            <option value="Luxury">Luxury</option>
+                            <option value="Salary">Salary</option>
+                            <option value="Services">Services</option>
+                            <option value="Investments">Investments</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">Date Range</label>
+                        <select class="form-select" id="dateFilter">
+                            <option value="7">Last 7 days</option>
+                            <option value="30" selected>Last 30 days</option>
+                            <option value="90">Last 90 days</option>
+                            <option value="180">Last 180 days</option>
+                            <option value="365">Last year</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">Min Amount (€)</label>
+                        <input type="number" class="form-control" id="minAmount">
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">Max Amount (€)</label>
+                        <input type="number" class="form-control" id="maxAmount">
+                    </div>
+                </div>
+                <div class="mt-3">
+                    <button class="btn btn-primary" onclick="applyFilters()">
+                        <i class="bi bi-funnel"></i> Apply Filters
+                    </button>
+                    <button class="btn btn-outline-secondary" onclick="resetFilters()">
+                        <i class="bi bi-arrow-counterclockwise"></i> Reset
+                    </button>
+                </div>
+            </div>
+            <div class="table-responsive">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Description</th>
+                            <th>Amount (€)</th>
+                            <th>Category</th>
+                            <th>Tax Amount (€)</th>
+                        </tr>
+                    </thead>
+                    <tbody id="transactionsList">
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Budgets Section -->
+        <div id="budgets" class="content-section">
+            <h2 class="mb-4">Budget Management</h2>
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="card mb-4">
+                        <div class="card-header">
+                            <h5 class="card-title mb-0">Budget Allocation Calculator</h5>
+                        </div>
+                        <div class="card-body">
+                            <form id="budgetAllocationForm">
+                                <div class="mb-3">
+                                    <label for="totalIncome" class="form-label">Total Monthly Income</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text">$</span>
+                                        <input type="number" class="form-control" id="totalIncome" required min="0" step="0.01">
+                                    </div>
+                                </div>
+                                <button type="submit" class="btn btn-primary">Calculate Allocation</button>
+                            </form>
+                            <div id="allocationResults" class="mt-4" style="display: none;">
+                                <h6>Recommended Budget Allocation:</h6>
+                                <div class="table-responsive">
+                                    <table class="table table-sm">
+                                        <thead>
+                                            <tr>
+                                                <th>Category</th>
+                                                <th>Amount</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="allocationTable"></tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="chart-container">
+                        <h4>Budget Settings</h4>
+                        <form id="budgetForm">
+                            <div class="mb-3">
+                                <label class="form-label">Category</label>
+                                <select class="form-select" id="budgetCategory" required>
+                                    <option value="Essential">Essential</option>
+                                    <option value="Luxury">Luxury</option>
+                                    <option value="Services">Services</option>
+                                    <option value="Investments">Investments</option>
+                                </select>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Monthly Limit (€)</label>
+                                <input type="number" class="form-control" id="monthlyLimit" required min="0" step="0.01">
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Alert Threshold (%)</label>
+                                <input type="number" class="form-control" id="alertThreshold" required min="0" max="100" value="80">
+                            </div>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-gear"></i> Set Budget
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="chart-container">
+                        <h4>Budget Status</h4>
+                        <div id="budgetStatus" class="list-group">
+                            <!-- Budget status items will be added here -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Analytics Section -->
+        <div id="analytics" class="content-section">
+            <h2 class="mb-4">Financial Analytics</h2>
+            <div class="row">
+                <div class="col-md-12 mb-4">
+                    <div class="chart-container">
+                        <h4>Spending Trends</h4>
+                        <div class="btn-group mb-3">
+                            <button class="btn btn-outline-secondary btn-sm" onclick="updateCategoryChart(30)">30 Days</button>
+                            <button class="btn btn-outline-secondary btn-sm" onclick="updateCategoryChart(90)">90 Days</button>
+                            <button class="btn btn-outline-secondary btn-sm" onclick="updateCategoryChart(180)">180 Days</button>
+                        </div>
+                        <canvas id="analyticsChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Export Section -->
+        <div id="export" class="content-section">
+            <h2 class="mb-4">Export Data</h2>
+            <div class="chart-container">
+                <form id="exportForm" class="row g-3">
+                    <div class="col-md-4">
+                        <label class="form-label">Start Date</label>
+                        <input type="date" class="form-control" id="exportStartDate">
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">End Date</label>
+                        <input type="date" class="form-control" id="exportEndDate">
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Format</label>
+                        <select class="form-select" id="exportFormat">
+                            <option value="csv">CSV</option>
+                            <option value="excel">Excel</option>
+                        </select>
+                    </div>
+                    <div class="col-12">
+                        <button type="submit" class="btn btn-success">
+                            <i class="bi bi-download"></i> Export
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Bill Modal -->
+    <div class="modal fade" id="addBillModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Add New Bill</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="billForm">
+                        <div class="mb-3">
+                            <label for="billText" class="form-label">Bill Text Content</label>
+                            <textarea class="form-control" id="billText" rows="10" placeholder="Paste your bill content here..."></textarea>
+                            <div class="form-text">
+                                Paste the text content of your bill. Include important details like:
+                                <ul class="mb-0">
+                                    <li>Due date</li>
+                                    <li>Amount</li>
+                                    <li>Bill type (electricity, water, etc.)</li>
+                                    <li>Payment frequency (monthly, quarterly, etc.)</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary" onclick="processBill()">Process Bill</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Global variables
+        let currentPage = 1;
+        let pageSize = 10;
+        let charts = {};
+
+        // Initialize when page loads
+        document.addEventListener('DOMContentLoaded', async () => {
+            try {
+                await initializeApp();
+            } catch (error) {
+                console.error('Initialization error:', error);
+                showNotification('Failed to initialize application: ' + error.message, 'error');
+            }
+        });
+
+        async function initializeApp() {
+            setupEventListeners();
+            await loadDashboardData();
+            initializeCharts();
+        }
+
+        function setupEventListeners() {
+            // Navigation
+            document.querySelectorAll('.nav-link').forEach(link => {
+                link.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    const section = e.target.closest('.nav-link').dataset.section;
+                    showSection(section);
+                });
+            });
+
+            // Form submissions
+            document.getElementById('transactionForm')?.addEventListener('submit', handleTransactionSubmit);
+            document.getElementById('transactionFilters')?.addEventListener('change', handleFiltersChange);
+
+            // Refresh button
+            document.querySelector('[onclick="refreshDashboard()"]')?.addEventListener('click', refreshDashboard);
+        }
+
+        async function loadDashboardData() {
+            showLoading();
+            try {
+                const [budgetData, transactions, analyticsData] = await Promise.all([
+                    fetchBudgetData(),
+                    fetchTransactions(1, { dateRange: 30 }),
+                    fetchAnalyticsData()
+                ]);
+                
+                updateDashboardStats(budgetData);
+                updateRecentTransactions(transactions.transactions);
+                updateCharts(analyticsData);
+                
+                showNotification('Dashboard updated successfully', 'success');
+            } catch (error) {
+                console.error('Error loading dashboard:', error);
+                showNotification('Failed to load dashboard data: ' + error.message, 'error');
+            } finally {
+                hideLoading();
+            }
+        }
+
+        async function fetchBudgetData() {
+            try {
+                const response = await fetch('/api/budget-summary');
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                console.log("Budget summary response:", response);
+                const data = await response.json();
+                console.log("Budget summary data:", data);
+                return data;
+            } catch (error) {
+                console.error("Error fetching budget data:", error);
+                throw error;
+            }
+        }
+
+        async function fetchTransactions(page = 1, filters = {}) {
+            try {
+                const queryParams = new URLSearchParams({
+                    page: page,
+                    ...filters
+                });
+                const response = await fetch(`/api/transactions?${queryParams}`);
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                console.log("Transactions response:", response);
+                const data = await response.json();
+                console.log("Transactions data:", data);
+                return data;
+            } catch (error) {
+                console.error("Error fetching transactions:", error);
+                throw error;
+            }
+        }
+
+        async function fetchAnalyticsData() {
+            try {
+                const response = await fetch('/api/analytics');
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                console.log("Analytics response:", response);
+                const data = await response.json();
+                console.log("Analytics data:", data);
+                return data;
+            } catch (error) {
+                console.error("Error fetching analytics data:", error);
+                throw error;
+            }
+        }
+
+        async function addTransaction(transactionData) {
+            try {
+                const response = await fetch('/api/transactions', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(transactionData)
+                });
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                console.log("Add transaction response:", response);
+                const data = await response.json();
+                console.log("Add transaction data:", data);
+                return data;
+            } catch (error) {
+                console.error("Error adding transaction:", error);
+                throw error;
+            }
+        }
+
+        async function handleTransactionSubmit(event) {
+            event.preventDefault();
+            showLoading();
+
+            try {
+                const form = event.target;
+                const formData = new FormData(form);
+                const transactionData = Object.fromEntries(formData);
+                
+                const response = await addTransaction(transactionData);
+                
+                showNotification('Transaction added successfully', 'success');
+                form.reset();
+                
+                // Refresh dashboard data
+                await loadDashboardData();
+                
+                // Close modal if it exists
+                const modal = bootstrap.Modal.getInstance(document.getElementById('addTransactionModal'));
+                if (modal) {
+                    modal.hide();
+                }
+            } catch (error) {
+                console.error('Error submitting transaction:', error);
+                showNotification('Failed to add transaction: ' + error.message, 'error');
+            } finally {
+                hideLoading();
+            }
+        }
+
+        function handleFiltersChange() {
+            currentPage = 1;
+            loadTransactions();
+        }
+
+        async function refreshDashboard() {
+            showLoading();
+            try {
+                await loadDashboardData();
+                showNotification('Dashboard refreshed successfully', 'success');
+            } catch (error) {
+                console.error('Error refreshing dashboard:', error);
+                showNotification('Failed to refresh dashboard data: ' + error.message, 'error');
+            } finally {
+                hideLoading();
+            }
+        }
+
+        // Utility Functions
+        function showLoading() {
+            document.getElementById('loadingOverlay').style.display = 'flex';
+        }
+
+        function hideLoading() {
+            document.getElementById('loadingOverlay').style.display = 'none';
+        }
+
+        function showNotification(message, type = 'success') {
+            const toast = document.createElement('div');
+            toast.className = `toast show bg-${type} text-white`;
+            toast.setAttribute('role', 'alert');
+            toast.innerHTML = `
+                <div class="toast-body">
+                    <i class="bi bi-${type === 'success' ? 'check-circle' : 'exclamation-circle'}"></i>
+                    ${message}
+                </div>
+            `;
+
+            document.querySelector('.toast-container').appendChild(toast);
+            setTimeout(() => toast.remove(), 3000);
+        }
+
+        function formatCurrency(amount) {
+            return new Intl.NumberFormat('de-DE', {
+                style: 'currency',
+                currency: 'EUR'
+            }).format(amount);
+        }
+
+        function formatDate(dateString) {
+            return new Date(dateString).toLocaleDateString('de-DE');
+        }
+
+        function formatPercentageChange(change) {
+            const sign = change >= 0 ? '+' : '';
+            return `${sign}${change}% from last month`;
+        }
+
+        function generateChartColors(count) {
+            const colors = [
+                '#2ecc71', '#3498db', '#9b59b6', '#f1c40f', '#e74c3c',
+                '#1abc9c', '#34495e', '#e67e22', '#95a5a6', '#16a085'
+            ];
+            return Array(count).fill(0).map((_, i) => colors[i % colors.length]);
+        }
+
+        function showSection(sectionId) {
+            document.querySelectorAll('.content-section').forEach(section => {
+                section.classList.remove('active');
+            });
+            document.querySelectorAll('.nav-link').forEach(link => {
+                link.classList.remove('active');
+            });
+
+            document.getElementById(sectionId).classList.add('active');
+            document.querySelector(`[data-section="${sectionId}"]`).classList.add('active');
+        }
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
